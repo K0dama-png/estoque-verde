@@ -1,0 +1,57 @@
+name: CI do projeto
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Verificar API e aplicativo
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Obter o código
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Preparar Node.js 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+
+      - name: Preparar pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: '10'
+          run_install: false
+          cache: true
+          cache_dependency_path: |
+            backend/pnpm-lock.yaml
+            mobile/pnpm-lock.yaml
+
+      - name: Instalar dependências da API
+        run: pnpm --dir backend install --frozen-lockfile
+
+      - name: Instalar dependências do aplicativo
+        run: pnpm --dir mobile install --frozen-lockfile
+
+      - name: Verificar os tipos da API
+        run: pnpm --dir backend typecheck
+
+      - name: Verificar os tipos do aplicativo
+        run: pnpm --dir mobile typecheck
+
+      - name: Compilar a API
+        run: pnpm --dir backend build
+
+      - name: Executar os testes da API
+        working-directory: backend
+        run: node --test dist/tests/*.test.js

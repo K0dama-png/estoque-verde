@@ -1,10 +1,10 @@
 # LoteCerto Mobile
 
-## GitHub e entrega no Coolify
+## GitHub e integração contínua
 
-Este repositório contém a API em `backend`, o aplicativo Expo em `mobile` e os arquivos de publicação em `deploy/coolify`. A publicação no Coolify disponibiliza a versão web do mesmo aplicativo e a API em dois serviços. O banco Oracle precisa estar acessível ao servidor e com o esquema inicial criado.
+Este repositório contém a API em `backend` e o aplicativo Expo em `mobile`. A branch principal é `main`.
 
-Consulte o [guia de publicação](deploy/coolify/LEIA-ME.md) e o [manual de CI/CD](deploy/coolify/CI-CD.md). O workflow em `.github/workflows/ci-cd.yml` valida o código e só solicita deploy depois das verificações, quando a integração estiver configurada. Credenciais reais ficam nas variáveis do Coolify e nos secrets do GitHub, nunca no código.
+O workflow em [`.github/workflows/ci.yml`](.github/workflows/ci.yml) instala as dependências com os lockfiles congelados, verifica os tipos dos dois projetos, compila a API e executa os testes existentes. Ele é acionado por pushes e pull requests para `main` ou manualmente pela aba Actions. Os arquivos `.env` reais ficam apenas no ambiente de execução.
 
 Para desenvolvimento, use Node.js 22, pnpm 10 e uma instância Oracle compatível. Os arquivos `.env.example` apresentam somente valores de exemplo. O repositório não inclui dependências instaladas, dados de mercados nem os pacotes locais do Windows.
 
@@ -70,4 +70,4 @@ Consulte [`backend/README.md`](./backend/README.md) para preparar o Oracle e exe
 
 ## Executar em outro computador
 
-Clone este repositório, instale Node.js e pnpm, prepare o Oracle conforme o guia do backend e configure os arquivos `.env` a partir dos exemplos. Execute a API e o aplicativo seguindo os comandos acima. Para disponibilizar o sistema por uma URL HTTPS, siga o [guia do Coolify](deploy/coolify/LEIA-ME.md).
+Clone este repositório, instale Node.js e pnpm, prepare o Oracle conforme o guia do backend e configure os arquivos `.env` a partir dos exemplos. Execute a API e o aplicativo seguindo os comandos acima.
