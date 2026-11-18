@@ -1,0 +1,113 @@
+name: CI e entrega no Coolify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Verificar API e aplicativo
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Obter o código
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Preparar Node.js 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+
+      - name: Preparar pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: '10'
+          run_install: false
+          cache: true
+          cache_dependency_path: |
+            backend/pnpm-lock.yaml
+            mobile/pnpm-lock.yaml
+
+      - name: Instalar dependências da API
+        run: pnpm --dir backend install --frozen-lockfile
+
+      - name: Instalar dependências do aplicativo
+        run: pnpm --dir mobile install --frozen-lockfile
+
+      - name: Verificar os tipos da API
+        run: pnpm --dir backend typecheck
+
+      - name: Verificar os tipos do aplicativo
+        run: pnpm --dir mobile typecheck
+
+      - name: Compilar a API
+        run: pnpm --dir backend build
+
+      - name: Executar os testes da API
+        working-directory: backend
+        run: node --test dist/tests/*.test.js
+
+  deploy:
+    name: Solicitar entrega no Coolify
+    needs: ci
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      vars.COOLIFY_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: coolify-production
+      cancel-in-progress: false
+    env:
+      COOLIFY_API_DEPLOY_WEBHOOK: ${{ secrets.COOLIFY_API_DEPLOY_WEBHOOK }}
+      COOLIFY_WEB_DEPLOY_WEBHOOK: ${{ secrets.COOLIFY_WEB_DEPLOY_WEBHOOK }}
+      COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+    steps:
+      - name: Conferir a configuração de entrega
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in COOLIFY_API_DEPLOY_WEBHOOK COOLIFY_WEB_DEPLOY_WEBHOOK COOLIFY_TOKEN; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Configure o secret $name nas configurações do repositório."
+              exit 1
+            fi
+          done
+          for name in COOLIFY_API_DEPLOY_WEBHOOK COOLIFY_WEB_DEPLOY_WEBHOOK; do
+            case "${!name}" in
+              https://*) ;;
+              *) echo "::error::O secret $name deve conter um webhook HTTPS do Coolify."; exit 1 ;;
+            esac
+          done
+
+      - name: Solicitar entrega da API
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --request POST --fail --silent --show-error \
+            --connect-timeout 15 --max-time 90 \
+            --header "Authorization: Bearer $COOLIFY_TOKEN" \
+            --output /dev/null \
+            "$COOLIFY_API_DEPLOY_WEBHOOK"
+          echo "Solicitação da API aceita pelo Coolify. Confira o resultado na aba Deployments."
+
+      - name: Solicitar entrega do aplicativo web
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --request POST --fail --silent --show-error \
+            --connect-timeout 15 --max-time 90 \
+            --header "Authorization: Bearer $COOLIFY_TOKEN" \
+            --output /dev/null \
+            "$COOLIFY_WEB_DEPLOY_WEBHOOK"
+          echo "Solicitação web aceita pelo Coolify. Confira o resultado na aba Deployments."
