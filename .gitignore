@@ -15,6 +15,9 @@ coverage/
 output/
 installer/
 screenshots/
+docs/
+/*.py
+/*.ps1
 *.pdf
 *.docx
 *.zip

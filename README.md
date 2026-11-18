@@ -68,6 +68,6 @@ A API TypeScript está em [`backend`](./backend) e inclui:
 
 Consulte [`backend/README.md`](./backend/README.md) para preparar o Oracle e executar a API. O aplicativo não utiliza dados demonstrativos: cadastros e movimentações são carregados e persistidos pela API Oracle.
 
-## Pacote para outro computador
+## Executar em outro computador
 
-O diretório [`installer`](./installer) contém o assistente de instalação do servidor para Windows. Ele gera um ZIP com Node.js portátil, API compilada, criação automatizada do schema Oracle, verificação da máquina, configuração de firewall e teste de conexão. O Oracle Database Free permanece como pré-requisito oficial porque sua instalação exige permissão administrativa.
+Clone este repositório, instale Node.js e pnpm, prepare o Oracle conforme o guia do backend e configure os arquivos `.env` a partir dos exemplos. Execute a API e o aplicativo seguindo os comandos acima. Para disponibilizar o sistema por uma URL HTTPS, siga o [guia do Coolify](deploy/coolify/LEIA-ME.md).
